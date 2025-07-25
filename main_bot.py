@@ -1,22 +1,27 @@
-import os
 import json
 import logging
 import time
-import hashlib
+import os
 from pathlib import Path
+import hashlib
 import httpx
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
-    Application, CommandHandler, ContextTypes, ConversationHandler,
-    CallbackQueryHandler, MessageHandler, filters
+    Application,
+    CommandHandler,
+    ContextTypes,
+    ConversationHandler,
+    CallbackQueryHandler,
+    MessageHandler,
+    filters,
 )
 
 # Logging
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# --- TO'LOV TIZIMI SOZLAMALARI ---
+# --- TO'LOV TIZIMI SOZLAMALARI (RENDER'DAN O'QILADI) ---
 CLICK_SERVICE_ID = os.environ.get("79052")
 CLICK_MERCHANT_ID = os.environ.get("43826")
 CLICK_SECRET_KEY = os.environ.get("1hXIYh3WSJlV")
@@ -25,7 +30,7 @@ BOT_USERNAME = os.environ.get("AbituriyentINFO_bot")
 # Suhbat holatlari
 SELECT_PAIR, GET_BALL, AWAITING_PAYMENT_CHECK = range(3)
 
-# Fanlar juftliklari (qisqartirilgan, siz o'zingiznikini to'liq qo'yishingiz mumkin)
+# Fanlar juftliklari
 FANLAR_JUFTLIKLARI = [
     "Biologiya - Kimyo",
     "Biologiya - Ona tili va adabiyoti",
@@ -94,7 +99,8 @@ def load_data():
 
 def normalize_string(text: str) -> str:
     if not isinstance(text, str): return ""
-    if "ijodiy" in text.lower() or "kasbiy" in text.lower(): return "kasbiy (ijodiy) imtihon"
+    if "ijodiy" in text.lower() or "kasbiy" in text.lower():
+        return "kasbiy (ijodiy) imtihon"
     return text.lower().replace("o‘", "o").replace("o'", "o").strip()
 
 def get_minimum_passing_score(user_data: dict, data: dict) -> float | None:
@@ -136,7 +142,6 @@ async def check_payment_status(merchant_trans_id: str) -> dict:
         logger.error(f"CLICK Status API'ga ulanishda xato: {e}")
         return {"error_code": -1, "error_note": "API'ga ulanishda xatolik"}
 
-# ⭐️⭐️⭐️ MANA SHU FUNKSIYALAR QO'SHILDI ⭐️⭐️⭐️
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     keyboard = []
     for pair in FANLAR_JUFTLIKLARI:
@@ -157,7 +162,8 @@ async def select_pair(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
 
 async def get_ball(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     try:
-        if not all([CLICK_SERVICE_ID, CLICK_MERCHANT_ID, CLICK_SECRET_KEY, BOT_USERNAME]) or "YOUR_" in CLICK_SERVICE_ID:
+        if not all([CLICK_SERVICE_ID, CLICK_MERCHANT_ID, CLICK_SECRET_KEY, BOT_USERNAME]):
+            logger.error("!!! TO'LOV TIZIMI SOZLANMAGAN !!! Muhit o'zgaruvchilaridan biri topilmadi.")
             await update.message.reply_text("XATOLIK: To'lov tizimi sozlanmagan!")
             return ConversationHandler.END
 
@@ -225,7 +231,9 @@ async def show_final_results(query: Update, context: ContextTypes.DEFAULT_TYPE):
     message += "\n⚠️ Diqqat Eslatma: Bu taxminiy natija. Rasmiy javoblarni www.uzbmb.uz saytida kuting!"
     await context.bot.send_message(chat_id=query.message.chat_id, text=message, parse_mode='Markdown')
 
-def find_recommendations(user_data: dict, data: dict) -> list:
+def find_recommendations(user_data: dict) -> list:
+    data = load_data()
+    if not data: return []
     norm_user_fan1, norm_user_fan2 = normalize_string(user_data['fan1']), normalize_string(user_data['fan2'])
     user_ball = user_data['ball']; suitable_directions = []
     for otm in data.get('otmlar', []):
@@ -255,28 +263,23 @@ def find_recommendations(user_data: dict, data: dict) -> list:
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     await update.message.reply_text("Suhbat bekor qilindi.");return ConversationHandler.END
 
-# ⭐️⭐️⭐️ XATOLIGI TUZATILGAN YAKUNIY main() FUNKSIYASI ⭐️⭐️⭐️
 def main() -> None:
-    # Tokenni muhit o'zgaruvchisidan o'qiymiz
     BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
     if not BOT_TOKEN:
         logger.error("DIQQAT: TELEGRAM_BOT_TOKEN muhit o'zgaruvchisi topilmadi!")
-        return # Dasturni to'xtatish
+        return
 
     application = Application.builder().token(BOT_TOKEN).build()
     
-    # Suhbat (conversation) mantig'ini sozlash
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("start", start)],
         states={
             SELECT_PAIR: [CallbackQueryHandler(select_pair)],
             GET_BALL: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_ball)],
-            # Agar to'lov mantig'ini yoqsangiz, bu qatorni ham ochasiz:
-            # AWAITING_PAYMENT_CHECK: [CallbackQueryHandler(handle_payment_check)]
+            AWAITING_PAYMENT_CHECK: [CallbackQueryHandler(handle_payment_check)]
         },
         fallbacks=[CommandHandler("cancel", cancel)],
     )
-    
     application.add_handler(conv_handler)
     application.run_polling()
 
