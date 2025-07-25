@@ -255,8 +255,9 @@ def find_recommendations(user_data: dict, data: dict) -> list:
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     await update.message.reply_text("Suhbat bekor qilindi.");return ConversationHandler.END
 
+# ⭐️⭐️⭐️ XATOLIGI TUZATILGAN YAKUNIY main() FUNKSIYASI ⭐️⭐️⭐️
 def main() -> None:
-    # ⭐️ Tokenni muhit o'zgaruvchisidan o'qiymiz
+    # Tokenni muhit o'zgaruvchisidan o'qiymiz
     BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
     if not BOT_TOKEN:
         logger.error("DIQQAT: TELEGRAM_BOT_TOKEN muhit o'zgaruvchisi topilmadi!")
@@ -264,9 +265,18 @@ def main() -> None:
 
     application = Application.builder().token(BOT_TOKEN).build()
     
+    # Suhbat (conversation) mantig'ini sozlash
     conv_handler = ConversationHandler(
-        # ... (bu qism o'zgarishsiz qoladi)
+        entry_points=[CommandHandler("start", start)],
+        states={
+            SELECT_PAIR: [CallbackQueryHandler(select_pair)],
+            GET_BALL: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_ball)],
+            # Agar to'lov mantig'ini yoqsangiz, bu qatorni ham ochasiz:
+            # AWAITING_PAYMENT_CHECK: [CallbackQueryHandler(handle_payment_check)]
+        },
+        fallbacks=[CommandHandler("cancel", cancel)],
     )
+    
     application.add_handler(conv_handler)
     application.run_polling()
 
