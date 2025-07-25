@@ -17,11 +17,10 @@ logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 
 # --- TO'LOV TIZIMI SOZLAMALARI ---
-# ❗️ BU YERGA CLICK'DAN OLGAN HAQIQIY MA'LUMOTLARINGIZNI KIRITING
-CLICK_SERVICE_ID = "79052"
-CLICK_MERCHANT_ID = "43826"
-CLICK_SECRET_KEY = "1hXIYh3WSJlV"
-BOT_USERNAME = "@AbituriyentINFO_bot"
+CLICK_SERVICE_ID = os.environ.get("79052")
+CLICK_MERCHANT_ID = os.environ.get("43826")
+CLICK_SECRET_KEY = os.environ.get("1hXIYh3WSJlV")
+BOT_USERNAME = os.environ.get("AbituriyentINFO_bot")
 
 # Suhbat holatlari
 SELECT_PAIR, GET_BALL, AWAITING_PAYMENT_CHECK = range(3)
@@ -38,12 +37,12 @@ FANLAR_JUFTLIKLARI = [
     "Huquqshunoslik - Chet tili",
     "Huquqshunoslik - Ingliz tili",
     #"Kasbiy (ijodiy) imtihon - Biologiya",
-    "Kasbiy (ijodiy) imtihon - Chet tili",
+    #"Kasbiy (ijodiy) imtihon - Chet tili",
     #"Kasbiy (ijodiy) imtihon - Kasbiy (ijodiy) imtihon",
-    "Kasbiy (ijodiy) imtihon - Ingliz tili",
-    "Kasbiy (ijodiy) imtihon - Kimyo",
-    "Kasbiy (ijodiy) imtihon - Matematika",
-    "Kasbiy (ijodiy) imtihon - Ona tili va adabiyoti",
+    #"Kasbiy (ijodiy) imtihon - Ingliz tili",
+    #"Kasbiy (ijodiy) imtihon - Kimyo",
+    #"Kasbiy (ijodiy) imtihon - Matematika",
+    #"Kasbiy (ijodiy) imtihon - Ona tili va adabiyoti",
     "Ingliz tili - Matematika",
     "Ingliz tili - Ona tili va adabiyoti",
     "Ingliz tili - Tarix",
@@ -257,22 +256,16 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     await update.message.reply_text("Suhbat bekor qilindi.");return ConversationHandler.END
 
 def main() -> None:
-    # Tokenni muhit o'zgaruvchisidan o'qiymiz
-    BOT_TOKEN = os.environ.get("7760307796:AAEBm0lS3xGLK8pNiihFAt6i3IOn6LTGFHU")
+    # ⭐️ Tokenni muhit o'zgaruvchisidan o'qiymiz
+    BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
     if not BOT_TOKEN:
         logger.error("DIQQAT: TELEGRAM_BOT_TOKEN muhit o'zgaruvchisi topilmadi!")
-        return
+        return # Dasturni to'xtatish
 
     application = Application.builder().token(BOT_TOKEN).build()
     
     conv_handler = ConversationHandler(
-        entry_points=[CommandHandler("start", start)],
-        states={
-            SELECT_PAIR: [CallbackQueryHandler(select_pair)],
-            GET_BALL: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_ball)],
-            AWAITING_PAYMENT_CHECK: [CallbackQueryHandler(handle_payment_check)]
-        },
-        fallbacks=[CommandHandler("cancel", cancel)],
+        # ... (bu qism o'zgarishsiz qoladi)
     )
     application.add_handler(conv_handler)
     application.run_polling()
