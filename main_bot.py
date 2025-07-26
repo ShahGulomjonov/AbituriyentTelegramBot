@@ -23,9 +23,9 @@ logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 
 # --- TO'LOV TIZIMI SOZLAMALARI (RENDER'DAN O'QILADI) ---
-CLICK_SERVICE_ID = os.environ.get("79052")
-CLICK_MERCHANT_ID = os.environ.get("43826")
-CLICK_SECRET_KEY = os.environ.get("1hXIYh3WSJlV")
+CLICK_SERVICE_ID = os.environ.get("CLICK_SERVICE_ID")
+CLICK_MERCHANT_ID = os.environ.get("CLICK_MERCHANT_ID")
+CLICK_SECRET_KEY = os.environ.get("CLICK_SECRET_KEY")
 BOT_USERNAME = os.environ.get("AbituriyentINFO_bot")
 
 # Suhbat holatlari
@@ -163,9 +163,11 @@ async def select_pair(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
 
 async def get_ball(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     try:
-        if not all([CLICK_SERVICE_ID, CLICK_MERCHANT_ID, CLICK_SECRET_KEY, BOT_USERNAME]):
-            logger.error("!!! TO'LOV TIZIMI SOZLANMAGAN !!! Muhit o'zgaruvchilaridan biri topilmadi.")
-            await update.message.reply_text("XATOLIK: To'lov tizimi sozlanmagan!")
+        # To'lov parametrlarini tekshirish (tuzatilgan)
+        required_params = [CLICK_SERVICE_ID, CLICK_MERCHANT_ID, CLICK_SECRET_KEY, BOT_USERNAME]
+        if not all(required_params) or any(param == "" for param in required_params):
+            logger.error(f"To'lov parametrlari: {required_params}")
+            await update.message.reply_text("⚠️ To'lov tizimi sozlanmagan! Iltimos, admin bilan bog'laning.")
             return ConversationHandler.END
 
         ball = float(update.message.text)
@@ -183,7 +185,7 @@ async def get_ball(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         recommendations = find_recommendations(context.user_data, data)
         context.user_data['recommendations'] = recommendations
         
-        merchant_trans_id = f"abt-{update.effective_chat.id}-{int(time.time())}"
+        merchant_trans_id = f"abt{update.effective_chat.id}{int(time.time())}"[:20]
         context.user_data['merchant_trans_id'] = merchant_trans_id
         amount = "37000.00"
         
