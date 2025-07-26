@@ -5,6 +5,8 @@ import os
 from pathlib import Path
 import hashlib
 import httpx
+from flask import Flask
+import threading
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
@@ -262,8 +264,24 @@ def find_recommendations(user_data: dict) -> list:
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     await update.message.reply_text("Suhbat bekor qilindi.");return ConversationHandler.END
+    
+# Render "uxlab qolmasligi" uchun soxta veb-server
+app = Flask(__name__)
+
+@app.route('/')
+def index():
+    return "Bot is running!"
+
+def run_flask():
+    # Render avtomatik ravishda PORT muhit o'zgaruvchisini beradi
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
 
 def main() -> None:
+    # Veb-serverni alohida potokda ishga tushiramiz
+    flask_thread = threading.Thread(target=run_flask)
+    flask_thread.daemon = True
+    flask_thread.start()
     BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
     if not BOT_TOKEN:
         logger.error("DIQQAT: TELEGRAM_BOT_TOKEN muhit o'zgaruvchisi topilmadi!")
