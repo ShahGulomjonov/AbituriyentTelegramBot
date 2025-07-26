@@ -2,6 +2,7 @@ import json
 import logging
 import time
 import os
+from dotenv import load_dotenv # ⭐️ YANGI IMPORT
 from pathlib import Path
 import hashlib
 import httpx
@@ -18,6 +19,9 @@ from telegram.ext import (
     MessageHandler,
     filters,
 )
+
+# ⭐️ .env faylidan muhit o'zgaruvchilarini yuklash
+load_dotenv()
 
 # Logging
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
