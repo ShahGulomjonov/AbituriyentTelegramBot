@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 CLICK_SERVICE_ID = os.environ.get("CLICK_SERVICE_ID")
 CLICK_MERCHANT_ID = os.environ.get("CLICK_MERCHANT_ID")
 CLICK_SECRET_KEY = os.environ.get("CLICK_SECRET_KEY")
-BOT_USERNAME = os.environ.get("AbituriyentINFO_bot")
+BOT_USERNAME = os.environ.get("BOT_USERNAME")
 
 # Suhbat holatlari
 SELECT_PAIR, GET_BALL, AWAITING_PAYMENT_CHECK = range(3)
