@@ -232,33 +232,70 @@ async def show_final_results(query: Update, context: ContextTypes.DEFAULT_TYPE):
     message += "\n⚠️ Diqqat Eslatma: Bu taxminiy natija. Rasmiy javoblarni www.uzbmb.uz saytida kuting!"
     await context.bot.send_message(chat_id=query.message.chat_id, text=message, parse_mode='Markdown')
 
-def find_recommendations(user_data: dict) -> list:
-    data = load_data()
-    if not data: return []
-    norm_user_fan1, norm_user_fan2 = normalize_string(user_data['fan1']), normalize_string(user_data['fan2'])
-    user_ball = user_data['ball']; suitable_directions = []
+# ⭐️⭐️⭐️ XATOLIGI TUZATILGAN YAKUNIY FUNKSIYA ⭐️⭐️⭐️
+def find_recommendations(user_data: dict, data: dict) -> list:
+    """Tavsiyalarni qidiradi. Ma'lumotlarni argument sifatida qabul qiladi."""
+    
+    # Endi bu funksiya ma'lumotlarni o'zi yuklamaydi, tayyor holda oladi
+    if not data: 
+        return []
+    
+    norm_user_fan1 = normalize_string(user_data['fan1'])
+    norm_user_fan2 = normalize_string(user_data['fan2'])
+    user_ball = user_data['ball']
+    
+    suitable_directions = []
+
     for otm in data.get('otmlar', []):
         for yo_nalish in otm.get("ta'lim_yo'nalishlari", []):
             try:
                 fanlar = yo_nalish.get("fanlar", [])
                 if len(fanlar) == 2 and fanlar[0].get('tartib') == 1 and fanlar[1].get('tartib') == 2:
-                    norm_req_fan1, norm_req_fan2 = normalize_string(fanlar[0].get('nomi')), normalize_string(fanlar[1].get('nomi'))
+                    norm_req_fan1 = normalize_string(fanlar[0].get('nomi'))
+                    norm_req_fan2 = normalize_string(fanlar[1].get('nomi'))
                     if norm_user_fan1 == norm_req_fan1 and norm_user_fan2 == norm_req_fan2:
-                        o_tish_ballari = yo_nalish.get("o'tish_ballari", {}); grant_scores, kontrakt_scores = o_tish_ballari.get('grant', {}), o_tish_ballari.get('kontrakt', {})
-                        grant_passing_score, kontrakt_passing_score = None, None; grant_year_info, kontrakt_year_info = "", ""
+                        o_tish_ballari = yo_nalish.get("o'tish_ballari", {})
+                        grant_scores = o_tish_ballari.get('grant', {})
+                        kontrakt_scores = o_tish_ballari.get('kontrakt', {})
+                        grant_passing_score, kontrakt_passing_score = None, None
+                        grant_year_info, kontrakt_year_info = "", ""
                         if grant_scores:
-                            grant_passing_score = (sum(grant_scores.values()) / len(grant_scores)) if len(grant_scores) >= 2 else grant_scores[max(grant_scores.keys())]
-                            grant_year_info = f"{len(grant_scores)} yillik o'rtacha" if len(grant_scores) >= 2 else f"{max(grant_scores.keys())}-yil"
+                            if len(grant_scores) >= 2:
+                                grant_passing_score = sum(grant_scores.values()) / len(grant_scores)
+                                grant_year_info = f"{len(grant_scores)} yillik o'rtacha"
+                            else:
+                                last_year = max(grant_scores.keys())
+                                grant_passing_score = grant_scores[last_year]
+                                grant_year_info = f"{last_year}-yil"
                         if kontrakt_scores:
-                            kontrakt_passing_score = (sum(kontrakt_scores.values()) / len(kontrakt_scores)) if len(kontrakt_scores) >= 2 else kontrakt_scores[max(kontrakt_scores.keys())]
-                            kontrakt_year_info = f"{len(kontrakt_scores)} yillik o'rtacha" if len(kontrakt_scores) >= 2 else f"{max(kontrakt_scores.keys())}-yil"
+                            if len(kontrakt_scores) >= 2:
+                                kontrakt_passing_score = sum(kontrakt_scores.values()) / len(kontrakt_scores)
+                                kontrakt_year_info = f"{len(kontrakt_scores)} yillik o'rtacha"
+                            else:
+                                last_year = max(kontrakt_scores.keys())
+                                kontrakt_passing_score = kontrakt_scores[last_year]
+                                kontrakt_year_info = f"{last_year}-yil"
                         status, passing_score, year_info = None, None, ""
-                        if grant_passing_score and user_ball >= grant_passing_score: status, passing_score, year_info = "Grant", grant_passing_score, grant_year_info
-                        elif kontrakt_passing_score and user_ball >= kontrakt_passing_score: status, passing_score, year_info = "Kontrakt", kontrakt_passing_score, kontrakt_year_info
+                        if grant_passing_score and user_ball >= grant_passing_score:
+                            status, passing_score, year_info = "Grant", grant_passing_score, grant_year_info
+                        elif kontrakt_passing_score and user_ball >= kontrakt_passing_score:
+                            status, passing_score, year_info = "Kontrakt", kontrakt_passing_score, kontrakt_year_info
                         if status:
-                            suitable_directions.append({"otm_nomi": otm.get("otm_nomi", "N/A").capitalize(), "otm_hududi": otm.get("otm_hududi", "N/A"),"yo_nalish_nomi": yo_nalish.get("ta'lim_yo'nalishi_nomi", "N/A"), "status": status,"passing_score": round(passing_score, 1), "year": year_info, "education_form": yo_nalish.get("education_form", "N/A"),"language": yo_nalish.get("language", "N/A"), "kontrakt_miqdori": yo_nalish.get("kontrakt_miqdori", 0)})
+                            suitable_directions.append({
+                                "otm_nomi": otm.get("otm_nomi", "N/A").capitalize(),
+                                "otm_hududi": otm.get("otm_hududi", "N/A"),
+                                "yo_nalish_nomi": yo_nalish.get("ta'lim_yo'nalishi_nomi", "N/A"),
+                                "status": status,
+                                "passing_score": round(passing_score, 1),
+                                "year": year_info,
+                                "education_form": yo_nalish.get("education_form", "N/A"),
+                                "language": yo_nalish.get("language", "N/A"),
+                                "kontrakt_miqdori": yo_nalish.get("kontrakt_miqdori", 0)
+                            })
             except Exception as e:
-                logger.warning(f"Yo'nalish o'qishda xato: {e}"); continue
+                logger.warning(f"Bir yo'nalishni o'qishda xato: {e}")
+                continue
+    
     return sorted(suitable_directions, key=lambda x: x['passing_score'], reverse=True)[:5]
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
