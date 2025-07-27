@@ -18,7 +18,6 @@ from telegram.ext import (
     MessageHandler,
     filters,
 )
-
 # Logging
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -164,11 +163,9 @@ async def select_pair(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
 
 async def get_ball(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     try:
-        # To'lov parametrlarini tekshirish (tuzatilgan)
-        required_params = [CLICK_SERVICE_ID, CLICK_MERCHANT_ID, CLICK_SECRET_KEY, BOT_USERNAME]
-        if not all(required_params) or any(param == "" for param in required_params):
-            logger.error(f"To'lov parametrlari: {required_params}")
-            await update.message.reply_text("⚠️ To'lov tizimi sozlanmagan! Iltimos, admin bilan bog'laning.")
+        if not all([CLICK_SERVICE_ID, CLICK_MERCHANT_ID, CLICK_SECRET_KEY, BOT_USERNAME]):
+            logger.error("!!! TO'LOV TIZIMI SOZLANMAGAN !!! Muhit o'zgaruvchilaridan biri topilmadi.")
+            await update.message.reply_text("XATOLIK: To'lov tizimi sozlanmagan!")
             return ConversationHandler.END
 
         ball = float(update.message.text)
@@ -186,7 +183,7 @@ async def get_ball(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         recommendations = find_recommendations(context.user_data, data)
         context.user_data['recommendations'] = recommendations
         
-        merchant_trans_id = f"abt{update.effective_chat.id}{int(time.time())}"[:20]
+        merchant_trans_id = f"abt-{update.effective_chat.id}-{int(time.time())}"
         context.user_data['merchant_trans_id'] = merchant_trans_id
         amount = "37000.00"
         
@@ -271,7 +268,7 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 app = Flask(__name__)
 
 @app.route('/')
-def home():
+def index():
     return "Bot is running!"
 
 def run_flask():
@@ -291,29 +288,17 @@ def main() -> None:
 
     application = Application.builder().token(BOT_TOKEN).build()
     
-    # Handlerni qo'shish
-    application.add_handler(conv_handler)
-    
-    # Webhook sozlamalari
-    webhook_url = f"https://{os.environ.get('RENDER_EXTERNAL_HOSTNAME')}/webhook"
-    port = int(os.environ.get('PORT', 5000))
-    
-    # Webhook endpoint
-    @app.post('/webhook')
-    async def webhook():
-        await application.update_queue.put(Update.de_json(await request.get_json(), application.bot))
-        return '', 200
-
-    # Webhook ni ishga tushirish
-    async def _run():
-        await application.bot.set_webhook(webhook_url)
-        app.run(host='0.0.0.0', port=port)
-
-    application.run_webhook(
-        listen="0.0.0.0",
-        port=port,
-        webhook_url=webhook_url,
+    conv_handler = ConversationHandler(
+        entry_points=[CommandHandler("start", start)],
+        states={
+            SELECT_PAIR: [CallbackQueryHandler(select_pair)],
+            GET_BALL: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_ball)],
+            AWAITING_PAYMENT_CHECK: [CallbackQueryHandler(handle_payment_check)]
+        },
+        fallbacks=[CommandHandler("cancel", cancel)],
     )
+    application.add_handler(conv_handler)
+    application.run_polling()
 
 if __name__ == "__main__":
     main()
