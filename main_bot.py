@@ -23,7 +23,7 @@ CLICK_SERVICE_ID = os.environ.get("CLICK_SERVICE_ID")
 CLICK_MERCHANT_ID = os.environ.get("CLICK_MERCHANT_ID")
 CLICK_SECRET_KEY = os.environ.get("CLICK_SECRET_KEY")
 BOT_USERNAME = os.environ.get("BOT_USERNAME")
-BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
+BOT_TOKEN = os.environ.get("AbituriyentINFO_bot")
 
 # Global o'zgaruvchi: To'lovlarni vaqtincha saqlash uchun
 PAYMENT_STATUSES = {}
@@ -33,7 +33,6 @@ app = Flask(__name__)
 
 @app.route('/')
 def health_check():
-    """Render.com uchun xizmatning "tirik" ekanligini bildiradi."""
     return "Bot and Web Server are running!", 200
 
 @app.route('/click/prepare', methods=['POST'])
@@ -83,18 +82,63 @@ def click_complete():
 # --- Telegram Bot qismi ---
 SELECT_PAIR, GET_BALL, AWAITING_PAYMENT_CHECK = range(3)
 
+# Fanlar juftliklari
 FANLAR_JUFTLIKLARI = [
-    "Biologiya - Kimyo","Biologiya - Ona tili va adabiyoti","Chet tili - Ona tili va adabiyoti","Fizika - Chet tili",
-    "Fizika - Matematika","Fransuz tili - Ona tili va adabiyoti","Geografiya - Matematika","Huquqshunoslik - Chet tili",
-    "Huquqshunoslik - Ingliz tili","Kasbiy (ijodiy) imtihon - Biologiya","Kasbiy (ijodiy) imtihon - Chet tili",
-    "Kasbiy (ijodiy) imtihon - Kasbiy (ijodiy) imtihon","Kasbiy (ijodiy) imtihon - Ingliz tili","Kasbiy (ijodiy) imtihon - Kimyo",
-    "Kasbiy (ijodiy) imtihon - Matematika","Kasbiy (ijodiy) imtihon - Ona tili va adabiyoti","Ingliz tili - Matematika",
-    "Ingliz tili - Ona tili va adabiyoti","Ingliz tili - Tarix","Kimyo - Biologiya","Kimyo - Fizika","Kimyo - Matematika",
-    "Matematika - Biologiya","Matematika - Chet tili","Matematika - Fizika","Matematika - Geografiya","Matematika - Ingliz tili",
-    "Matematika - Kimyo","Matematika - Ona tili va adabiyoti","Nemis tili - Ona tili va adabiyoti","Ona tili va adabiyoti - Chet tili",
-    "Ona tili va adabiyoti - Ingliz tili","Ona tili va adabiyoti - Matematika","Ona tili va adabiyoti - Tarix",
-    "O'zbek tili va adabiyoti - Chet tili","Tarix - Chet tili","Tarix - Geografiya","Tarix - Ingliz tili","Tarix - Matematika",
-    "Tarix - Ona tili va adabiyoti"
+    "Biologiya - Kimyo",
+    "Biologiya - Ona tili va adabiyoti",
+    "Chet tili - Ona tili va adabiyoti",
+    "Fizika - Chet tili",
+    "Fizika - Matematika",
+    "Fransuz tili - Ona tili va adabiyoti",
+    "Geografiya - Matematika",
+    "Huquqshunoslik - Chet tili",
+    "Huquqshunoslik - Ingliz tili",
+    #"Kasbiy (ijodiy) imtihon - Biologiya",
+    #"Kasbiy (ijodiy) imtihon - Chet tili",
+    #"Kasbiy (ijodiy) imtihon - Kasbiy (ijodiy) imtihon",
+    #"Kasbiy (ijodiy) imtihon - Ingliz tili",
+    #"Kasbiy (ijodiy) imtihon - Kimyo",
+    #"Kasbiy (ijodiy) imtihon - Matematika",
+    #"Kasbiy (ijodiy) imtihon - Ona tili va adabiyoti",
+    "Ingliz tili - Matematika",
+    "Ingliz tili - Ona tili va adabiyoti",
+    "Ingliz tili - Tarix",
+    "Kimyo - Biologiya",
+    "Kimyo - Fizika",
+    "Kimyo - Matematika",
+    "Matematika - Biologiya",
+    "Matematika - Chet tili",
+    "Matematika - Fizika",
+    "Matematika - Geografiya",
+    "Matematika - Ingliz tili",
+    "Matematika - Kimyo",
+    "Matematika - Ona tili va adabiyoti",
+    "Nemis tili - Ona tili va adabiyoti",
+    "Ona tili va adabiyoti - Chet tili",
+    "Ona tili va adabiyoti - Ingliz tili",
+    "Ona tili va adabiyoti - Matematika",
+    "Ona tili va adabiyoti - Tarix",
+    "O'zbek tili va adabiyoti - Chet tili",
+    #"Qirg'iz tili va adabiyoti - Tarix",
+    #"Qozoq tili va adabiyoti - Chet tili",
+    #"Qozoq tili va adabiyoti - Matematika",
+    #"Qozoq tili va adabiyoti - Tarix",
+    #"Qoraqalpoq tili va adabiyoti - Chet tili",
+    #"Qoraqalpoq tili va adabiyoti - Tarix",
+    #"Rus tili - O'zbek tili va adabiyoti",
+    #"Rus tili va adabiyoti - Chet tili",
+    #"Rus tili va adabiyoti - Ingliz tili",
+    #"Rus tili va adabiyoti - Tarix",
+    "Tarix - Chet tili",
+    "Tarix - Geografiya",
+    #"Tarix - Ijdoiy imtihon",
+    #"Tarix - Ingliz tili",
+    "Tarix - Matematika",
+    "Tarix - Ona tili va adabiyoti",
+    #"Tojik tili va adabiyoti - Chet tili",
+    #"Tojik tili va adabiyoti - Tarix",
+    #"Turkman tili va adabiyoti - Tarix",
+    #"Turkman tili va adabiyoti - Chet tili"
 ]
 
 def load_data():
@@ -109,7 +153,7 @@ def normalize_string(text: str) -> str:
     if not isinstance(text, str): return ""
     if "ijodiy" in text.lower() or "kasbiy" in text.lower(): return "kasbiy (ijodiy) imtihon"
     return text.lower().replace("o‘", "o").replace("o'", "o").strip()
-    
+
 def get_minimum_passing_score(user_data: dict, data: dict) -> float | None:
     norm_user_fan1, norm_user_fan2 = normalize_string(user_data['fan1']), normalize_string(user_data['fan2'])
     min_score = float('inf'); found = False
@@ -126,6 +170,7 @@ def get_minimum_passing_score(user_data: dict, data: dict) -> float | None:
                         if score < min_score: min_score = score; found = True
     return min_score if found else None
 
+# ⭐️ 1. YANGI `create_click_invoice` FUNKSIYASI QO'SHILDI ⭐️
 async def create_click_invoice(amount: str, phone_number: str, merchant_trans_id: str) -> dict:
     url = "https://api.click.uz/v2/merchant/invoice/create"
     timestamp = str(int(time.time()))
@@ -140,6 +185,7 @@ async def create_click_invoice(amount: str, phone_number: str, merchant_trans_id
             return response.json()
     except Exception as e:
         logger.error(f"CLICK Invoice API'ga ulanishda xato: {e}"); return {"error_code": -1, "error_note": "API'ga ulanishda xatolik"}
+
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     keyboard = []
@@ -157,6 +203,7 @@ async def select_pair(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
     context.user_data['fan1'] = fan1; context.user_data['fan2'] = fan2
     await query.edit_message_text(text=f"✅ Tanlangan juftlik: {pair_string}\n\nBalingizni kiriting (Masalan: 137.0)"); return GET_BALL
 
+# ⭐️ 2. get_ball FUNKSIYASI TO'G'RI CHAqIRUV BILAN YANGILANDI ⭐️
 async def get_ball(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     try:
         if not all([CLICK_SERVICE_ID, CLICK_MERCHANT_ID, CLICK_SECRET_KEY, BOT_USERNAME]):
@@ -234,7 +281,7 @@ async def show_final_results(query: Update, context: ContextTypes.DEFAULT_TYPE):
                         f"  Ta'lim shakli: {rec['education_form']}\n  Ta'lim tili: {rec['language']}\n"
                         f"  Kontrakt: {rec['kontrakt_miqdori']:,} so'm\n  Status: *{rec['status']}*\n"
                         f"  O'tish bali ({rec['year']}): {rec['passing_score']}\n\n")
-    message += "\n Manbaa: www.uzbmb.uz"
+    message += "\n⚠️ Diqqat Eslatma: Bu taxminiy natija. Rasmiy javoblarni www.uzbmb.uz saytida kuting!"
     await context.bot.send_message(chat_id=query.message.chat_id, text=message, parse_mode='Markdown')
 
 def find_recommendations(user_data: dict, data: dict) -> list:
