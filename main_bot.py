@@ -23,7 +23,7 @@ CLICK_SERVICE_ID = os.environ.get("CLICK_SERVICE_ID")
 CLICK_MERCHANT_ID = os.environ.get("CLICK_MERCHANT_ID")
 CLICK_SECRET_KEY = os.environ.get("CLICK_SECRET_KEY")
 BOT_USERNAME = os.environ.get("BOT_USERNAME")
-BOT_TOKEN = os.environ.get("AbituriyentINFO_bot")
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
 # Global o'zgaruvchi: To'lovlarni vaqtincha saqlash uchun
 PAYMENT_STATUSES = {}
