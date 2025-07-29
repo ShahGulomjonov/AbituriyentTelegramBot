@@ -23,7 +23,7 @@ CLICK_SERVICE_ID = os.environ.get("CLICK_SERVICE_ID")
 CLICK_MERCHANT_ID = os.environ.get("CLICK_MERCHANT_ID")
 CLICK_SECRET_KEY = os.environ.get("CLICK_SECRET_KEY")
 BOT_USERNAME = os.environ.get("BOT_USERNAME")
-BOT_TOKEN = os.environ.get("BOT_TOKEN")
+BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 
 # Global o'zgaruvchi: To'lovlarni vaqtincha saqlash uchun
 PAYMENT_STATUSES = {}
@@ -153,7 +153,7 @@ def normalize_string(text: str) -> str:
     if not isinstance(text, str): return ""
     if "ijodiy" in text.lower() or "kasbiy" in text.lower(): return "kasbiy (ijodiy) imtihon"
     return text.lower().replace("o‘", "o").replace("o'", "o").strip()
-
+    
 def get_minimum_passing_score(user_data: dict, data: dict) -> float | None:
     norm_user_fan1, norm_user_fan2 = normalize_string(user_data['fan1']), normalize_string(user_data['fan2'])
     min_score = float('inf'); found = False
@@ -170,7 +170,6 @@ def get_minimum_passing_score(user_data: dict, data: dict) -> float | None:
                         if score < min_score: min_score = score; found = True
     return min_score if found else None
 
-# ⭐️ 1. YANGI `create_click_invoice` FUNKSIYASI QO'SHILDI ⭐️
 async def create_click_invoice(amount: str, phone_number: str, merchant_trans_id: str) -> dict:
     url = "https://api.click.uz/v2/merchant/invoice/create"
     timestamp = str(int(time.time()))
@@ -185,7 +184,6 @@ async def create_click_invoice(amount: str, phone_number: str, merchant_trans_id
             return response.json()
     except Exception as e:
         logger.error(f"CLICK Invoice API'ga ulanishda xato: {e}"); return {"error_code": -1, "error_note": "API'ga ulanishda xatolik"}
-
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     keyboard = []
@@ -203,7 +201,6 @@ async def select_pair(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
     context.user_data['fan1'] = fan1; context.user_data['fan2'] = fan2
     await query.edit_message_text(text=f"✅ Tanlangan juftlik: {pair_string}\n\nBalingizni kiriting (Masalan: 137.0)"); return GET_BALL
 
-# ⭐️ 2. get_ball FUNKSIYASI TO'G'RI CHAqIRUV BILAN YANGILANDI ⭐️
 async def get_ball(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     try:
         if not all([CLICK_SERVICE_ID, CLICK_MERCHANT_ID, CLICK_SECRET_KEY, BOT_USERNAME]):
